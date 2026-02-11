@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doppel — Browse & assess products from Taobao, 1688 & Weidian</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+/* Designali-style: variables & base */
+:root {
+  --bg: 0 0% 100%;
+  --fg: 0 0% 9%;
+  --muted: 0 0% 96%;
+  --muted-fg: 0 0% 45%;
+  --border: 0 0% 90%;
+  --primary: 263 70% 50%;
+  --primary-fg: 0 0% 100%;
+  --radius: 1rem;
+  --radius-lg: 1.5rem;
+  --sidebar-w: 16rem;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: hsl(var(--fg));
+  background: hsl(var(--bg));
+}
+.app { position: relative; min-height: 100vh; overflow-x: hidden; }
+.bg-gradient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.2;
+  animation: bgShift 30s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes bgShift {
+  0%, 100% { background: radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.5) 0%, rgba(79, 70, 229, 0.4) 50%, transparent 70%); }
+  33% { background: radial-gradient(circle at 30% 70%, rgba(219, 39, 119, 0.5) 0%, rgba(99, 102, 241, 0.4) 50%, transparent 70%); }
+  66% { background: radial-gradient(circle at 70% 30%, rgba(59, 130, 246, 0.5) 0%, rgba(139, 92, 246, 0.4) 50%, transparent 70%); }
+}
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.sidebar-overlay.is-open { display: block; opacity: 1; }
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 50;
+  width: var(--sidebar-w);
+  background: hsl(var(--bg));
+  border-right: 1px solid hsl(var(--border));
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+@media (min-width: 768px) {
+  .sidebar { transform: translateX(0); }
+}
+.sidebar.is-open { transform: translateX(0); }
+.sidebar-inner { display: flex; flex-direction: column; height: 100%; padding: 1rem; }
+.sidebar-brand { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; }
+.sidebar-logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff;
+}
+.sidebar-title { font-size: 1.1rem; display: block; }
+.sidebar-tagline { font-size: 0.75rem; color: hsl(var(--muted-fg)); }
+.sidebar-search { position: relative; margin: 0.75rem 0; }
+.sidebar-search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: hsl(var(--muted-fg)); }
+.sidebar-search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.sidebar-search-input:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+.sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg);
+  color: hsl(var(--fg));
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+.sidebar-link:hover { background: hsl(var(--muted)); }
+.sidebar-link.is-active { background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); }
+.sidebar-footer { border-top: 1px solid hsl(var(--border)); padding-top: 0.75rem; }
+.main-wrap { min-height: 100vh; margin-left: 0; transition: margin-left 0.3s ease; }
+@media (min-width: 768px) {
+  .main-wrap { margin-left: var(--sidebar-w); }
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 4rem;
+  padding: 0 1rem;
+  background: hsl(var(--bg) / 0.95);
+  border-bottom: 1px solid hsl(var(--border));
+  backdrop-filter: blur(8px);
+}
+.topbar-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  cursor: pointer;
+  color: hsl(var(--fg));
+}
+.topbar-menu:hover { background: hsl(var(--muted)); }
+@media (min-width: 768px) { .topbar-menu { display: none; } }
+.topbar-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
+.main { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+.content { padding: 0 0.25rem; }
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--radius-lg) + 0.5rem);
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #6366f1 100%);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  color: #fff;
+}
+.hero-card-inner { position: relative; z-index: 1; max-width: 36rem; }
+.hero-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+.hero-title { font-size: clamp(1.5rem, 3.5vw, 2.25rem); font-weight: 700; line-height: 1.2; margin: 0 0 0.5rem; color: #fff; }
+.hero-subtitle { font-size: 1rem; color: rgba(255, 255, 255, 0.85); margin: 0 0 1.5rem; }
+.hero-globe {
+  position: absolute;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10rem;
+  height: 10rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+@media (min-width: 900px) { .hero-globe { display: flex; } }
+.globe-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  animation: globeRotate 25s linear infinite;
+}
+.globe-ring:nth-child(1) { width: 6rem; height: 6rem; animation-duration: 20s; animation-direction: reverse; }
+.globe-ring:nth-child(2) { width: 8rem; height: 8rem; animation-duration: 30s; }
+.globe-ring:nth-child(3) { width: 10rem; height: 10rem; animation-duration: 40s; animation-direction: reverse; }
+@keyframes globeRotate { to { transform: rotate(360deg); } }
+.search-box {
+  display: flex;
+  max-width: 28rem;
+  margin: 0 0 0.5rem;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #fff;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-box:focus-within { border-color: rgba(255, 255, 255, 0.5); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2); }
+.hero-card .search-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+  color: #111;
+}
+.hero-card .search-btn {
+  padding: 0.75rem 1.25rem;
+  background: #fff;
+  color: #4f46e5;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, color 0.2s;
+}
+.hero-card .search-btn:hover { background: #f3f4f6; }
+.hero-note { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; }
+.panel-box {
+  margin-top: 1rem;
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.panel-box summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; color: #fff; }
+.panel-inner { margin-top: 0.75rem; }
+.panel-inner label { display: block; font-size: 0.85rem; color: rgba(255,255,255,0.9); margin-bottom: 0.5rem; }
+.input-row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+.input-row .search-input { flex: 1; margin: 0; padding: 0.5rem 0.75rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: #fff; color: #111; }
+.input-row .search-btn { margin: 0; }
+.api-tool { margin-bottom: 1rem; }
+.api-tool label { display: block; font-size: 0.85rem; color: rgba(255,255,255,0.9); margin-bottom: 0.5rem; }
+.convert-result { font-size: 0.9rem; padding: 0.75rem; background: rgba(255,255,255,0.95); border-radius: 0.5rem; color: #111; }
+.convert-result .convert-label { margin: 0 0 0.5rem; font-weight: 500; }
+.convert-result .convert-url { margin: 0 0 0.5rem; word-break: break-all; }
+.convert-result .convert-url a { color: #4f46e5; }
+.convert-result .convert-error { color: #b91c1c; margin: 0; }
+.convert-result .convert-loading { margin: 0; }
+.convert-result pre { margin: 0; font-size: 0.75rem; overflow: auto; white-space: pre-wrap; }
+.btn-copy { padding: 0.35rem 0.75rem; font-size: 0.85rem; background: #4f46e5; color: #fff; border: none; border-radius: 0.5rem; cursor: pointer; font-family: inherit; }
+.btn-copy:hover { background: #4338ca; }
+.product-detail-result { margin-top: 0.75rem; }
+.detail-card { display: flex; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: var(--radius); border: 1px solid hsl(var(--border)); }
+.detail-card__img { flex-shrink: 0; width: 6rem; height: 6rem; background: hsl(var(--muted)); border-radius: 0.5rem; overflow: hidden; }
+.detail-card__img img { width: 100%; height: 100%; object-fit: cover; }
+.detail-card__body { min-width: 0; }
+.detail-card__title { margin: 0 0 0.5rem; font-size: 1rem; }
+.detail-card__price { margin: 0 0 0.5rem; font-weight: 600; color: hsl(var(--primary)); }
+.detail-card__link { font-size: 0.9rem; color: hsl(var(--primary)); }
+.detail-raw { margin: 0; font-size: 0.8rem; overflow: auto; white-space: pre-wrap; }
+.search-results {
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+  background: hsl(var(--muted) / 0.5);
+  border-radius: var(--radius-lg);
+  border: 1px solid hsl(var(--border));
+}
+.results-header { margin-bottom: 1rem; }
+.results-meta { color: hsl(var(--muted-fg)); margin: 0; font-size: 0.95rem; }
+.results-loading { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 2rem; color: hsl(var(--muted-fg)); }
+.spinner { width: 2.5rem; height: 2.5rem; border: 3px solid hsl(var(--border)); border-top-color: hsl(var(--primary)); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.results-error { padding: 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius); color: #b91c1c; }
+.results-error p { margin: 0; }
+.results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.product-card {
+  display: block;
+  background: hsl(var(--bg));
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 2px solid hsl(var(--border));
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.product-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: hsl(var(--primary) / 0.4); }
+.product-card__img { aspect-ratio: 1; background: hsl(var(--muted)); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.product-card__img img { width: 100%; height: 100%; object-fit: cover; }
+.product-card__no-img { font-size: 0.85rem; color: hsl(var(--muted-fg)); }
+.product-card__body { padding: 0.875rem; }
+.product-card__title { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.25rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.product-card__price { margin: 0; font-size: 1rem; font-weight: 600; color: hsl(var(--primary)); }
+.results-empty { grid-column: 1 / -1; text-align: center; color: hsl(var(--muted-fg)); padding: 2rem; }
+.section-title { font-size: clamp(1.25rem, 2.5vw, 1.75rem); font-weight: 700; margin: 0 0 0.5rem; color: hsl(var(--fg)); }
+.section-subtitle { color: hsl(var(--muted-fg)); margin: 0 0 1.5rem; max-width: 32rem; }
+.section { padding: 2rem 0; }
+.card-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; display: grid; }
+.card {
+  background: hsl(var(--bg));
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 2px solid hsl(var(--border));
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.06); border-color: hsl(var(--primary) / 0.3); }
+.card-icon { width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; background: hsl(var(--muted)); border-radius: var(--radius); font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem; color: hsl(var(--fg)); }
+.card h3 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.card p { margin: 0; color: hsl(var(--muted-fg)); font-size: 0.9rem; }
+.qc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; }
+.qc-content .section-subtitle { margin-bottom: 1rem; }
+.qc-list { margin: 0; padding: 0; list-style: none; }
+.qc-list li { padding: 0.5rem 0 0.5rem 1.5rem; position: relative; color: hsl(var(--muted-fg)); }
+.qc-list li::before { content: '✓'; position: absolute; left: 0; color: hsl(var(--primary)); font-weight: 700; }
+.qc-visual { min-height: 14rem; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--primary) / 0.05) 100%); border-radius: var(--radius-lg); }
+.qc-placeholder { font-size: 2.5rem; font-weight: 700; color: hsl(var(--primary)); opacity: 0.5; }
+.how-section { background: hsl(var(--muted) / 0.5); border-radius: var(--radius-lg); }
+.how-section .content { text-align: center; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+.step { text-align: center; }
+.step-num { display: inline-flex; width: 2.75rem; height: 2.75rem; align-items: center; justify-content: center; background: hsl(var(--primary)); color: #fff; font-weight: 700; border-radius: 50%; margin-bottom: 1rem; font-size: 1.25rem; }
+.step h3 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.step p { margin: 0; color: hsl(var(--muted-fg)); font-size: 0.9rem; }
+.btn { display: inline-block; padding: 0.75rem 1.5rem; font-weight: 600; text-decoration: none; border-radius: var(--radius-lg); font-family: inherit; font-size: 1rem; cursor: pointer; border: none; transition: background 0.2s, color 0.2s; }
+.btn-primary { background: hsl(var(--primary)); color: #fff; }
+.btn-primary:hover { background: hsl(263 70% 42%); }
+.faq-list { max-width: 36rem; }
+.faq-item { border-bottom: 1px solid hsl(var(--border)); padding: 1rem 0; }
+.faq-item summary { font-weight: 600; cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after { content: '+'; font-size: 1.25rem; color: hsl(var(--muted-fg)); }
+.faq-item[open] summary::after { content: '−'; }
+.faq-item p { margin: 0.75rem 0 0; color: hsl(var(--muted-fg)); font-size: 0.95rem; }
+.cta-section { padding: 2rem 0; margin-top: 2rem; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #fff; text-align: center; border-radius: var(--radius-lg); }
+.cta-section .section-title { color: #fff; }
+.cta-section .section-subtitle { color: rgba(255,255,255,0.8); margin-bottom: 1rem; }
+.search-box--centered { margin: 0 auto; }
+.cta-section .search-box { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); }
+.cta-section .search-input { background: rgba(255,255,255,0.1); color: #fff; }
+.cta-section .search-input::placeholder { color: rgba(255,255,255,0.6); }
+.cta-section .search-btn { background: #fff; color: #3730a3; }
+.cta-section .search-btn:hover { background: #e0e7ff; }
+.footer { padding: 1.5rem 0; margin-top: 2rem; background: hsl(0 0% 7%); color: hsl(0 0% 60%); font-size: 0.9rem; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.footer-inner { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+.footer-brand .footer-logo { color: #fff; font-weight: 700; text-decoration: none; }
+.footer-brand p { margin: 0.25rem 0 0; color: hsl(0 0% 50%); }
+.footer-links { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+.footer-links a { color: hsl(0 0% 70%); text-decoration: none; }
+.footer-links a:hover { color: #fff; }
+.footer-legal { width: 100%; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid hsl(0 0% 18%); font-size: 0.8rem; color: hsl(0 0% 45%); }
+@media (max-width: 768px) {
+  .qc-grid { grid-template-columns: 1fr; }
+  .qc-visual { min-height: 10rem; }
+  .search-box { flex-direction: column; }
+  .hero-card .search-btn { width: 100%; }
+  .input-row { flex-wrap: wrap; }
+  .input-row .search-btn { width: 100%; }
+}
+  </style>
+</head>
+<body class="app">
+  <!-- Gradient background -->
+  <div class="bg-gradient" aria-hidden="true"></div>
+
+  <!-- Mobile overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <div>
+          <strong class="sidebar-title">Doppel</strong>
+          <span class="sidebar-tagline">1688 & Taobao</span>
+        </div>
+      </div>
+      <div class="sidebar-search">
+        <svg class="sidebar-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="search" placeholder="Search..." class="sidebar-search-input" id="sidebar-search" aria-label="Search">
+      </div>
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link is-active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Home
+        </a>
+        <a href="how-to-shop.html" class="sidebar-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          How to Shop
+        </a>
+        <a href="#features" class="sidebar-link">Features</a>
+        <a href="https://blog.doppel.fit/" target="_blank" rel="noopener" class="sidebar-link">Blog</a>
+        <a href="#faq" class="sidebar-link">FAQ</a>
+        <a href="#contact" class="sidebar-link">Contact</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="mailto:contact@doppel.fit" class="sidebar-link">Contact</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <header class="topbar">
+      <button type="button" class="topbar-menu" id="sidebar-toggle" aria-label="Abrir menú">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      </button>
+      <h1 class="topbar-title">Doppel</h1>
+    </header>
+
+    <main class="main">
+      <section class="hero-card">
+        <div class="hero-card-inner">
+          <span class="hero-badge">1688 · Taobao · Weidian</span>
+          <h2 class="hero-title">Browse & assess products from Taobao, 1688 & Weidian</h2>
+          <p class="hero-subtitle">An informational platform to help you discover products and QC photos from Chinese marketplaces—before you buy.</p>
+          <form class="search-box" action="#" method="get" role="search">
+            <input type="search" name="q" placeholder="Search products, items, links..." autocomplete="off" class="search-input">
+            <button type="submit" class="search-btn">Search</button>
+          </form>
+          <p class="hero-note">Doppel does not sell products. We surface product info and QC photos from agents to help you decide.</p>
+          <details class="panel-box">
+            <summary>Convert image URL for 1688 (search by image)</summary>
+            <div class="panel-inner">
+              <label for="image-url-input">Paste image URL (e.g. product photo):</label>
+              <div class="input-row">
+                <input type="url" id="image-url-input" placeholder="https://example.com/image.jpg" class="search-input">
+                <button type="button" id="convert-image-btn" class="search-btn">Convert</button>
+              </div>
+              <div id="convert-result" class="convert-result" hidden></div>
+            </div>
+          </details>
+          <details class="panel-box">
+            <summary>1688 API tools — Product detail by ID / URL</summary>
+            <div class="panel-inner">
+              <div class="api-tool">
+                <label for="product-id-input">Product ID (1688 item_id):</label>
+                <div class="input-row">
+                  <input type="text" id="product-id-input" placeholder="e.g. 1234567890" class="search-input">
+                  <button type="button" id="product-detail-id-btn" class="search-btn">Get detail</button>
+                </div>
+              </div>
+              <div class="api-tool">
+                <label for="product-url-input">Product URL (1688 link):</label>
+                <div class="input-row">
+                  <input type="url" id="product-url-input" placeholder="https://detail.1688.com/..." class="search-input">
+                  <button type="button" id="product-detail-url-btn" class="search-btn">Get detail</button>
+                </div>
+              </div>
+              <div id="product-detail-result" class="convert-result product-detail-result" hidden></div>
+            </div>
+          </details>
+        </div>
+        <div class="hero-globe" aria-hidden="true">
+          <div class="globe-ring"></div>
+          <div class="globe-ring"></div>
+          <div class="globe-ring"></div>
+        </div>
+      </section>
+
+      <section class="search-results" id="search-results" aria-live="polite" hidden>
+        <div class="content">
+          <div class="results-header">
+            <h2 class="section-title">Search results</h2>
+            <p class="results-meta" id="results-meta"></p>
+          </div>
+          <div class="results-loading" id="results-loading">
+            <span class="spinner"></span>
+            <p>Searching 1688…</p>
+          </div>
+          <div class="results-error" id="results-error" hidden>
+            <p id="results-error-msg"></p>
+          </div>
+          <div class="results-grid" id="results-grid"></div>
+        </div>
+      </section>
+
+      <section class="section platforms" id="features">
+        <div class="content">
+          <h2 class="section-title">One place for Chinese marketplaces</h2>
+          <p class="section-subtitle">Search across Taobao, 1688, and Weidian. Filter by category, platform, and popularity.</p>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-icon">淘</div>
+              <h3>Taobao</h3>
+              <p>Browse and compare Taobao listings with QC photos and seller history.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">1688</div>
+              <h3>1688</h3>
+              <p>Wholesale and B2B items with quality checks and shipping estimates.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">微</div>
+              <h3>Weidian</h3>
+              <p>Discover Weidian products with agent QC photos and reviews.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section qc-section">
+        <div class="content qc-grid">
+          <div class="qc-content">
+            <h2 class="section-title">QC photos that actually help</h2>
+            <p>Quality control photos from shipping agents—taken in the warehouse before your items ship. Check sizing, colors, and defects so you know what you're getting.</p>
+            <ul class="qc-list">
+              <li>Real warehouse photos, not just listing images</li>
+              <li>Compare similar items and seller history</li>
+              <li>Weight and estimated shipping details</li>
+            </ul>
+          </div>
+          <div class="qc-visual">
+            <div class="qc-placeholder">QC</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section how-section">
+        <div class="content">
+          <h2 class="section-title">How it works</h2>
+          <div class="steps">
+            <div class="step">
+              <span class="step-num">1</span>
+              <h3>Search</h3>
+              <p>Find products by keyword, category, or paste a Taobao/1688/Weidian link.</p>
+            </div>
+            <div class="step">
+              <span class="step-num">2</span>
+              <h3>Review</h3>
+              <p>See QC photos, seller info, similar items, and community feedback.</p>
+            </div>
+            <div class="step">
+              <span class="step-num">3</span>
+              <h3>Buy with an agent</h3>
+              <p>Use your preferred agent to purchase and ship. We don't sell—we inform.</p>
+            </div>
+          </div>
+          <a href="how-to-shop.html" class="btn btn-primary">How to Shop</a>
+        </div>
+      </section>
+
+      <section class="section faq-section" id="faq">
+        <div class="content">
+          <h2 class="section-title">FAQ</h2>
+          <div class="faq-list">
+            <details class="faq-item">
+              <summary>Does Doppel sell products?</summary>
+              <p>No. Doppel.fit is an informational platform. We aggregate product info and QC photos. "Buy" links go to external agent platforms.</p>
+            </details>
+            <details class="faq-item">
+              <summary>Where do QC photos come from?</summary>
+              <p>QC images are provided by third-party shipping agents (warehouse photos before shipment). We surface them to help you evaluate listings.</p>
+            </details>
+            <details class="faq-item">
+              <summary>Do you verify authenticity or trademarks?</summary>
+              <p>We do not verify authenticity or confirm trademark compliance. All trademarks belong to their respective owners.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-section">
+        <div class="content">
+          <h2 class="section-title">Ready to browse?</h2>
+          <p class="section-subtitle">Start searching Taobao, 1688, and Weidian with QC photos in one place.</p>
+          <form class="search-box search-box--centered" action="#" method="get">
+            <input type="search" name="q" placeholder="Search products..." class="search-input">
+            <button type="submit" class="search-btn">Search</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer" id="contact">
+      <div class="content footer-inner">
+        <div class="footer-brand">
+          <a href="index.html" class="footer-logo">Doppel</a>
+          <p>Informational platform for Taobao, 1688 & Weidian.</p>
+        </div>
+        <div class="footer-links">
+          <a href="how-to-shop.html">How to Shop</a>
+          <a href="https://blog.doppel.fit/" target="_blank" rel="noopener">Blog</a>
+          <a href="#faq">FAQ</a>
+          <a href="mailto:contact@doppel.fit">Contact</a>
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+        </div>
+        <p class="footer-legal">QC images and product content are provided by third-party agents. Doppel does not sell products or verify authenticity. For copyright or trademark concerns: contact@doppel.fit.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+// ——— Taobao 1688 API (RapidAPI — chuyenhangsieutocvn)
+var TAOBAO_1688 = {
+  host: 'taobao-1688-api1.p.rapidapi.com',
+  key: '32331e430amsh5ed5391aed20b6fp1a11ffjsn67fbae04bd1c',
+  base: 'https://taobao-1688-api1.p.rapidapi.com',
+  endpoints: {
+    searchKeyword: '/1688/search-keyword',
+    productDetailById: '/1688/product-detail',
+    productDetailByUrl: '/1688/product-by-url',
+    searchByImage: '/1688/search-image'
+  }
+};
+var TAOBAO_DATAHUB = {
+  host: 'taobao-datahub.p.rapidapi.com',
+  key: '32331e430amsh5ed5391aed20b6fp1a11ffjsn67fbae04bd1c',
+  base: 'https://taobao-datahub.p.rapidapi.com',
+  endpoints: { search: '/search', searchProducts: '/products/search', products: '/products' }
+};
+var API_1688 = {
+  convertImageUrl: 'https://1688-product2.p.rapidapi.com/1688/tools/image/convert_url',
+  host: '1688-product2.p.rapidapi.com',
+  key: '32331e430amsh5ed5391aed20b6fp1a11ffjsn67fbae04bd1c'
+};
+const searchForms = document.querySelectorAll('form[role="search"], .search-box');
+const resultsSection = document.getElementById('search-results');
+const resultsGrid = document.getElementById('results-grid');
+const resultsMeta = document.getElementById('results-meta');
+const resultsLoading = document.getElementById('results-loading');
+const resultsError = document.getElementById('results-error');
+const resultsErrorMsg = document.getElementById('results-error-msg');
+function showLoading() {
+  if (!resultsSection) return;
+  resultsSection.hidden = false;
+  resultsGrid.innerHTML = '';
+  resultsMeta.textContent = '';
+  if (resultsLoading) resultsLoading.hidden = false;
+  if (resultsError) resultsError.hidden = true;
+  resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function showError(message) {
+  if (resultsLoading) resultsLoading.hidden = true;
+  if (resultsError) {
+    resultsError.hidden = false;
+    if (resultsErrorMsg) resultsErrorMsg.textContent = message;
+  }
+  if (resultsGrid) resultsGrid.innerHTML = '';
+  if (resultsMeta) resultsMeta.textContent = '';
+}
+function showResults(data, query) {
+  if (resultsLoading) resultsLoading.hidden = true;
+  if (resultsError) resultsError.hidden = true;
+  var items = data._items ? data._items : normalizeItems(data);
+  var total = data.total != null ? data.total : items.length;
+  if (resultsMeta) {
+    resultsMeta.textContent = items.length > 0
+      ? total + ' result' + (total !== 1 ? 's' : '') + ' for "' + escapeHtml(query) + '"'
+      : 'No results for "' + escapeHtml(query) + '". Try another keyword.';
+  }
+  if (!resultsGrid) return;
+  resultsGrid.innerHTML = '';
+  if (items.length === 0) {
+    resultsGrid.innerHTML = '<p class="results-empty">No products found. Try another keyword (e.g. shoes, bag, phone) or check spelling.</p>';
+    return;
+  }
+  items.forEach(function (item) {
+    const card = document.createElement('a');
+    card.href = item.url || '#';
+    if (item.url) card.target = '_blank';
+    card.rel = 'noopener';
+    card.className = 'product-card';
+    card.innerHTML =
+      '<div class="product-card__img">' +
+        (item.image ? '<img src="' + escapeAttr(item.image) + '" alt="" loading="lazy">' : '<span class="product-card__no-img">No image</span>') +
+      '</div>' +
+      '<div class="product-card__body">' +
+        '<h3 class="product-card__title">' + escapeHtml(item.title || 'Product') + '</h3>' +
+        (item.price != null ? '<p class="product-card__price">¥ ' + escapeHtml(String(item.price)) + '</p>' : '') +
+      '</div>';
+    resultsGrid.appendChild(card);
+  });
+}
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+function escapeAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+function mapProduct(x) {
+  if (typeof x !== 'object' || x === null) return { title: String(x), url: '', image: '', price: null };
+  var url = x.url || x.link || x.item_url || x.detail_url || x.product_url || x.goods_url || '';
+  if (!url && (x.goods_id || x.item_id || x.product_id)) {
+    var id = x.goods_id || x.item_id || x.product_id;
+    url = 'https://detail.1688.com/offer/' + id + '.html';
+  }
+  return {
+    title: x.title || x.name || x.item_title || x.subject || x.goods_name || '',
+    url: url,
+    image: x.pic_url || x.pict_url || x.image || x.img || x.thumb || x.goods_img || (x.images && x.images[0]) || '',
+    price: x.price != null ? x.price : (x.current_price || x.reserve_price || x.min_price || x.retail_price)
+  };
+}
+function normalizeItems(data) {
+  if (!data || typeof data !== 'object') return [];
+  var list = data.data || data.list || data.items || data.products || data.goods;
+  if (Array.isArray(list)) return list.map(mapProduct);
+  var result = data.result;
+  if (result && typeof result === 'object') {
+    var rlist = result.data || result.list || result.items || result.item || result.goods;
+    if (Array.isArray(rlist)) return rlist.map(mapProduct);
+    if (Array.isArray(result)) return result.map(mapProduct);
+    if (result.shop_list && Array.isArray(result.shop_list)) {
+      return result.shop_list.map(function (s) {
+        return {
+          title: s.title || s.shop_name || s.name || '',
+          url: s.url || s.shop_url || '',
+          image: s.pic_url || s.logo || s.image || '',
+          price: s.price || null
+        };
+      });
+    }
+  }
+  if (data.body && data.body.result) {
+    var blist = data.body.result;
+    if (Array.isArray(blist)) return blist.map(mapProduct);
+    if (blist.list && Array.isArray(blist.list)) return blist.list.map(mapProduct);
+    if (blist.data && Array.isArray(blist.data)) return blist.data.map(mapProduct);
+  }
+  var found = findProductArray(data);
+  if (found.length) return found.map(mapProduct);
+  return [];
+}
+function findProductArray(obj, depth) {
+  depth = depth || 0;
+  if (depth > 5) return [];
+  if (!obj || typeof obj !== 'object') return [];
+  if (Array.isArray(obj)) {
+    var first = obj[0];
+    if (obj.length > 0 && typeof first === 'object' && first !== null) {
+      var hasProductField = first.title || first.name || first.item_title || first.subject || first.pic_url || first.price;
+      if (hasProductField) return obj;
+    }
+    return [];
+  }
+  for (var key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      var val = obj[key];
+      if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
+        var sample = val[0];
+        if (sample.title || sample.name || sample.item_title || sample.subject || sample.pic_url || sample.goods_id) {
+          return val;
+        }
+      }
+      var nested = findProductArray(val, depth + 1);
+      if (nested.length) return nested;
+    }
+  }
+  return [];
+}
+function tryDataHubSearch(query) {
+  var endpoints = [
+    TAOBAO_DATAHUB.base + TAOBAO_DATAHUB.endpoints.search + '?q=' + encodeURIComponent(query),
+    TAOBAO_DATAHUB.base + TAOBAO_DATAHUB.endpoints.search + '?keyword=' + encodeURIComponent(query),
+    TAOBAO_DATAHUB.base + TAOBAO_DATAHUB.endpoints.searchProducts + '?q=' + encodeURIComponent(query),
+    TAOBAO_DATAHUB.base + TAOBAO_DATAHUB.endpoints.products + '?q=' + encodeURIComponent(query)
+  ];
+  var headers = { 'x-rapidapi-host': TAOBAO_DATAHUB.host, 'x-rapidapi-key': TAOBAO_DATAHUB.key };
+  function tryNext(i) {
+    if (i >= endpoints.length) return Promise.resolve(null);
+    return fetch(endpoints[i], { method: 'GET', headers: headers })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (out) {
+        if (!out.ok || (out.data && (out.data.message || out.data.error))) return tryNext(i + 1);
+        var items = normalizeItems(out.data);
+        if (items.length > 0) {
+          var total = (out.data && out.data.total != null) ? out.data.total : items.length;
+          return { _items: items, total: total };
+        }
+        return tryNext(i + 1);
+      })
+      .catch(function () { return tryNext(i + 1); });
+  }
+  return tryNext(0);
+}
+function runSearch(query) {
+  query = (query || '').trim();
+  if (!query) return;
+  showLoading();
+  var url1688 = TAOBAO_1688.base + TAOBAO_1688.endpoints.searchKeyword + '?keyword=' + encodeURIComponent(query) + '&page=1';
+  fetch(url1688, {
+    method: 'GET',
+    headers: { 'x-rapidapi-host': TAOBAO_1688.host, 'x-rapidapi-key': TAOBAO_1688.key }
+  })
+    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
+    .then(function (out) {
+      var d = out.data;
+      if (d && (d.message || d.error)) {
+        return tryDataHubSearch(query).then(function (datahub) {
+          if (datahub) showResults(datahub, query);
+          else showError(d.message || d.error || 'API error');
+        });
+      }
+      if (out.ok) {
+        var items = normalizeItems(d);
+        if (items.length > 0) {
+          var total = (d && d.total != null) ? d.total : (d && d.data && d.data.total != null ? d.data.total : items.length);
+          showResults({ _items: items, total: total }, query);
+          return;
+        }
+        return tryDataHubSearch(query).then(function (datahub) {
+          if (datahub) showResults(datahub, query);
+          else { var total = (d && d.total != null) ? d.total : 0; showResults({ _items: [], total: total }, query); }
+        });
+      }
+      return tryDataHubSearch(query).then(function (datahub) {
+        if (datahub) showResults(datahub, query);
+        else showError(d && (d.message || d.error) || 'Error ' + (out.status || ''));
+      });
+    })
+    .catch(function (err) {
+      tryDataHubSearch(query).then(function (datahub) {
+        if (datahub) showResults(datahub, query);
+        else {
+          var msg = err.message || 'Search failed.';
+          if (msg.indexOf('Failed to fetch') !== -1 || err.name === 'TypeError') {
+            msg = 'No se pudo conectar. Ejecuta la p\u00E1gina desde un servidor (npx serve) o sube a Vercel.';
+          }
+          showError(msg);
+        }
+      });
+    });
+}
+searchForms.forEach(function (form) {
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = form.querySelector('input[name="q"], .search-input');
+    var query = input ? input.value : '';
+    runSearch(query);
+  });
+});
+var productDetailResultEl = document.getElementById('product-detail-result');
+var productIdInput = document.getElementById('product-id-input');
+var productDetailIdBtn = document.getElementById('product-detail-id-btn');
+var productUrlInput = document.getElementById('product-url-input');
+var productDetailUrlBtn = document.getElementById('product-detail-url-btn');
+function call1688(path, params, method) {
+  method = method || 'GET';
+  var url = TAOBAO_1688.base + path;
+  if (method === 'GET' && params) {
+    var q = Object.keys(params).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+    url += (path.indexOf('?') >= 0 ? '&' : '?') + q;
+  }
+  var opts = {
+    method: method,
+    headers: { 'x-rapidapi-host': TAOBAO_1688.host, 'x-rapidapi-key': TAOBAO_1688.key }
+  };
+  if (method === 'POST' && params) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(params);
+  }
+  return fetch(url, opts).then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); });
+}
+function showProductDetail(data) {
+  if (!productDetailResultEl) return;
+  productDetailResultEl.hidden = false;
+  var d = data.data || data.result || data;
+  var title = d.title || d.subject || d.name || '';
+  var price = d.price != null ? d.price : (d.min_price || d.current_price);
+  var img = d.pic_url || d.image || d.img || (d.images && d.images[0]);
+  var url = d.url || d.detail_url || d.link || d.product_url || '';
+  var html = '';
+  if (title || price != null || img || url) {
+    html = '<div class="detail-card">';
+    if (img) html += '<div class="detail-card__img"><img src="' + escapeAttr(img) + '" alt=""></div>';
+    html += '<div class="detail-card__body">';
+    if (title) html += '<h3 class="detail-card__title">' + escapeHtml(title) + '</h3>';
+    if (price != null) html += '<p class="detail-card__price">¥ ' + escapeHtml(String(price)) + '</p>';
+    if (url) html += '<a href="' + escapeAttr(url) + '" target="_blank" rel="noopener" class="detail-card__link">Open on 1688</a>';
+    html += '</div></div>';
+  } else {
+    html = '<pre class="detail-raw">' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>';
+  }
+  productDetailResultEl.innerHTML = html;
+}
+if (productDetailIdBtn && productIdInput) {
+  productDetailIdBtn.addEventListener('click', function () {
+    var id = (productIdInput.value || '').trim();
+    if (!id) {
+      if (productDetailResultEl) { productDetailResultEl.hidden = false; productDetailResultEl.innerHTML = '<p class="convert-error">Enter a product ID.</p>'; }
+      return;
+    }
+    productDetailResultEl.hidden = false;
+    productDetailResultEl.innerHTML = '<p class="convert-loading">Loading…</p>';
+    call1688(TAOBAO_1688.endpoints.productDetailById + '?item_id=' + encodeURIComponent(id))
+      .then(function (out) {
+        if (out.ok) showProductDetail(out.data);
+        else productDetailResultEl.innerHTML = '<p class="convert-error">' + escapeHtml((out.data && (out.data.message || out.data.error)) || 'Request failed') + '</p>';
+      })
+      .catch(function (err) {
+        productDetailResultEl.innerHTML = '<p class="convert-error">' + escapeHtml(err.message || 'Failed') + '</p>';
+      });
+  });
+}
+if (productDetailUrlBtn && productUrlInput) {
+  productDetailUrlBtn.addEventListener('click', function () {
+    var url = (productUrlInput.value || '').trim();
+    if (!url) {
+      if (productDetailResultEl) { productDetailResultEl.hidden = false; productDetailResultEl.innerHTML = '<p class="convert-error">Enter a product URL.</p>'; }
+      return;
+    }
+    productDetailResultEl.hidden = false;
+    productDetailResultEl.innerHTML = '<p class="convert-loading">Loading…</p>';
+    call1688(TAOBAO_1688.endpoints.productDetailByUrl + '?url=' + encodeURIComponent(url))
+      .then(function (out) {
+        if (out.ok) showProductDetail(out.data);
+        else productDetailResultEl.innerHTML = '<p class="convert-error">' + escapeHtml((out.data && (out.data.message || out.data.error)) || 'Request failed') + '</p>';
+      })
+      .catch(function (err) {
+        productDetailResultEl.innerHTML = '<p class="convert-error">' + escapeHtml(err.message || 'Failed') + '</p>';
+      });
+  });
+}
+var convertResultEl = document.getElementById('convert-result');
+var convertBtn = document.getElementById('convert-image-btn');
+var imageUrlInput = document.getElementById('image-url-input');
+if (convertBtn && imageUrlInput) {
+  convertBtn.addEventListener('click', function () {
+    var url = (imageUrlInput.value || '').trim();
+    if (!url) {
+      if (convertResultEl) {
+        convertResultEl.hidden = false;
+        convertResultEl.innerHTML = '<p class="convert-error">Pega una URL de imagen.</p>';
+      }
+      return;
+    }
+    convertResultEl.hidden = false;
+    convertResultEl.innerHTML = '<p class="convert-loading">Converting…</p>';
+    fetch(API_1688.convertImageUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-rapidapi-host': API_1688.host,
+        'x-rapidapi-key': API_1688.key
+      },
+      body: JSON.stringify({ url: url })
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok) throw new Error(data.message || data.error || 'Request failed');
+          return data;
+        });
+      })
+      .then(function (data) {
+        var converted = (data.data && data.data.url) || data.url || data.converted_url || data.result;
+        if (converted) {
+          convertResultEl.innerHTML =
+            '<p class="convert-label">Converted URL (1688):</p>' +
+            '<p class="convert-url"><a href="' + escapeAttr(converted) + '" target="_blank" rel="noopener">' + escapeHtml(converted) + '</a></p>' +
+            '<button type="button" class="btn-copy" data-copy="' + escapeAttr(converted) + '">Copy</button>';
+          var copyBtn = convertResultEl.querySelector('.btn-copy');
+          if (copyBtn) {
+            copyBtn.addEventListener('click', function () {
+              navigator.clipboard.writeText(converted).then(function () {
+                copyBtn.textContent = 'Copied!';
+                setTimeout(function () { copyBtn.textContent = 'Copy'; }, 2000);
+              });
+            });
+          }
+        } else {
+          convertResultEl.innerHTML = '<p class="convert-label">Response:</p><pre>' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>';
+        }
+      })
+      .catch(function (err) {
+        convertResultEl.innerHTML = '<p class="convert-error">' + escapeHtml(err.message || 'Conversion failed.') + '</p>';
+      });
+  });
+}
+(function () {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebar-overlay');
+  var toggle = document.getElementById('sidebar-toggle');
+  var sidebarSearch = document.getElementById('sidebar-search');
+  function open() { sidebar.classList.add('is-open'); overlay.classList.add('is-open'); }
+  function close() { sidebar.classList.remove('is-open'); overlay.classList.remove('is-open'); }
+  if (toggle) toggle.addEventListener('click', open);
+  if (overlay) overlay.addEventListener('click', close);
+  if (sidebarSearch) {
+    sidebarSearch.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var q = sidebarSearch.value.trim();
+        if (q) {
+          var form = document.querySelector('form[role="search"]');
+          var input = form && form.querySelector('input[name="q"]');
+          if (input) { input.value = q; form.requestSubmit(); }
+          close();
+        }
+      }
+    });
+  }
+})();
+  </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Shop — Doppel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: 0 0% 100%;
+      --fg: 0 0% 9%;
+      --muted: 0 0% 96%;
+      --muted-fg: 0 0% 45%;
+      --border: 0 0% 90%;
+      --primary: 263 70% 50%;
+      --radius: 1rem;
+      --radius-lg: 1.5rem;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; line-height: 1.6; color: hsl(var(--fg)); background: hsl(var(--bg)); }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+    .header { position: sticky; top: 0; z-index: 20; background: hsl(var(--bg)); border-bottom: 1px solid hsl(var(--border)); }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; height: 4rem; }
+    .logo { font-weight: 700; font-size: 1.25rem; color: hsl(var(--fg)); text-decoration: none; }
+    .logo:hover { color: hsl(var(--primary)); }
+    .nav { display: flex; gap: 1.5rem; }
+    .nav a { color: hsl(var(--muted-fg)); text-decoration: none; font-weight: 500; }
+    .nav a:hover { color: hsl(var(--primary)); }
+    .nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; }
+    .nav-toggle span { display: block; width: 22px; height: 2px; background: hsl(var(--fg)); margin: 5px 0; }
+    @media (max-width: 768px) {
+      .nav { display: none; }
+      .nav-toggle { display: block; }
+    }
+    .page-header { padding: 48px 0 32px; border-bottom: 1px solid hsl(var(--border)); }
+    .page-title { font-size: 2rem; font-weight: 700; margin: 0 0 12px; }
+    .page-content { padding: 48px 0 80px; max-width: 720px; }
+    .page-content h2 { font-size: 1.35rem; margin: 32px 0 12px; }
+    .page-content p { margin: 0 0 16px; color: hsl(var(--muted-fg)); }
+    .page-content ul { margin: 0 0 16px; padding-left: 24px; color: hsl(var(--muted-fg)); }
+    .page-content a { color: hsl(var(--primary)); }
+    .disclaimer { background: hsl(var(--muted)); padding: 20px; border-radius: var(--radius); margin-top: 32px; font-size: 0.9rem; color: hsl(var(--muted-fg)); }
+    .back-link { display: inline-block; margin-bottom: 24px; color: hsl(var(--primary)); text-decoration: none; font-weight: 500; }
+    .back-link:hover { text-decoration: underline; }
+    .section-subtitle { color: hsl(var(--muted-fg)); }
+    .footer { padding: 1.5rem 0; margin-top: 2rem; background: hsl(0 0% 7%); color: hsl(0 0% 60%); font-size: 0.9rem; }
+    .footer-inner { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+    .footer-brand .logo { color: #fff; }
+    .footer-brand p { margin: 0.25rem 0 0; color: hsl(0 0% 50%); }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+    .footer-links a { color: hsl(0 0% 70%); text-decoration: none; }
+    .footer-links a:hover { color: #fff; }
+    .footer-legal { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid hsl(0 0% 18%); font-size: 0.8rem; color: hsl(0 0% 45%); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">Doppel</a>
+      <nav class="nav">
+        <a href="how-to-shop.html">How to Shop</a>
+        <a href="index.html#features">Features</a>
+        <a href="https://blog.doppel.fit/" target="_blank" rel="noopener">Blog</a>
+        <a href="index.html#faq">FAQ</a>
+        <a href="index.html#contact">Contact</a>
+      </nav>
+      <button class="nav-toggle" aria-label="Abrir menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="container page-header">
+      <a href="index.html" class="back-link">← Back to Doppel</a>
+      <h1 class="page-title">How to Shop</h1>
+      <p class="section-subtitle" style="margin: 0;">Using Doppel to browse and buy from Taobao, 1688, and Weidian.</p>
+    </div>
+
+    <div class="container page-content">
+      <p>Doppel.fit helps you discover and assess products from Chinese marketplaces (Taobao, 1688, Weidian) by showing you product information and <strong>QC (Quality Control) photos</strong> from shipping agents. We don’t sell anything—we help you decide what to buy and where.</p>
+
+      <h2>1. Search for products</h2>
+      <p>Use the search bar on the homepage to find items by keyword, or paste a product link from Taobao, 1688, or Weidian. You can filter by category, platform, and popularity.</p>
+
+      <h2>2. Review listings</h2>
+      <p>On each product page you’ll see:</p>
+      <ul>
+        <li>QC photos from agents (warehouse photos before shipping)</li>
+        <li>Seller history and similar items</li>
+        <li>Reviews and community feedback</li>
+        <li>Weight and estimated shipping details</li>
+      </ul>
+
+      <h2>3. Buy with an agent</h2>
+      <p>When you’re ready to buy, use a shopping agent. Links labeled “Buy” on Doppel take you to external agent platforms. The agent will:</p>
+      <ul>
+        <li>Order the item from the Chinese marketplace for you</li>
+        <li>Store it in their warehouse</li>
+        <li>Take QC photos</li>
+        <li>Ship your haul internationally</li>
+      </ul>
+      <p>For detailed agent guides and comparisons, check our <a href="https://blog.doppel.fit/" target="_blank" rel="noopener">Blog</a>.</p>
+
+      <div class="disclaimer">
+        <strong>Disclaimer:</strong> QC images and product content on Doppel.fit are provided by third-party agents. Doppel.fit does not sell products, verify authenticity, or confirm trademark compliance. Links labeled "Buy" redirect to external agent platforms; Doppel.fit is not involved in the sale, payment, or shipment of products. All trademarks and logos belong to their respective owners. For copyright or trademark concerns, please contact us at contact@doppel.fit.
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">Doppel</a>
+        <p>Informational platform for Taobao, 1688 & Weidian.</p>
+      </div>
+      <div class="footer-links">
+        <a href="how-to-shop.html">How to Shop</a>
+        <a href="https://blog.doppel.fit/" target="_blank" rel="noopener">Blog</a>
+        <a href="index.html#faq">FAQ</a>
+        <a href="mailto:contact@doppel.fit">Contact</a>
+      </div>
+      <p class="footer-legal">QC images and product content are provided by third-party agents. Doppel does not sell products or verify authenticity.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

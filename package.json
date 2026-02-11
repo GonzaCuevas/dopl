@@ -1,0 +1,11 @@
+{
+  "name": "doppel-web",
+  "private": true,
+  "scripts": {
+    "start": "serve . -p 3000",
+    "serve": "serve . -p 3000"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
