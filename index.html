@@ -665,10 +665,12 @@ function showResults(data, query) {
     if (item.url) card.target = '_blank';
     card.rel = 'noopener';
     card.className = 'product-card';
+    var imgHtml = item.image
+      ? '<img src="' + escapeAttr(item.image) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';var s=this.nextElementSibling;if(s)s.style.display=\'block\'">'
+      : '';
+    var noImgHtml = '<span class="product-card__no-img" style="' + (item.image ? 'display:none' : '') + '">No image</span>';
     card.innerHTML =
-      '<div class="product-card__img">' +
-        (item.image ? '<img src="' + escapeAttr(item.image) + '" alt="" loading="lazy">' : '<span class="product-card__no-img">No image</span>') +
-      '</div>' +
+      '<div class="product-card__img">' + imgHtml + noImgHtml + '</div>' +
       '<div class="product-card__body">' +
         '<h3 class="product-card__title">' + escapeHtml(item.title || 'Product') + '</h3>' +
         (item.price != null ? '<p class="product-card__price">¥ ' + escapeHtml(String(item.price)) + '</p>' : '') +
@@ -689,6 +691,13 @@ function escapeAttr(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+function normalizeImageUrl(src) {
+  if (typeof src !== 'string' || !src.trim()) return '';
+  src = src.trim();
+  if (src.indexOf('//') === 0) src = 'https:' + src;
+  else if (src.indexOf('http') !== 0) src = 'https://' + src;
+  return src;
+}
 function mapProduct(x) {
   if (typeof x !== 'object' || x === null) return { title: String(x), url: '', image: '', price: null };
   var url = x.url || x.link || x.item_url || x.detail_url || x.product_url || x.goods_url || '';
@@ -696,16 +705,18 @@ function mapProduct(x) {
     var id = x.goods_id || x.item_id || x.product_id;
     url = 'https://detail.1688.com/offer/' + id + '.html';
   }
+  var rawImg = x.pic_url || x.pict_url || x.picture || x.show_img || x.main_pic || x.cover || x.item_pic || x.picUrl || x.image || x.img || x.thumb || x.goods_img || (x.images && x.images[0]) || (x.pic_urls && x.pic_urls[0]) || '';
+  if (rawImg && typeof rawImg === 'object' && (rawImg.url || rawImg.src)) rawImg = rawImg.url || rawImg.src;
   return {
     title: x.title || x.name || x.item_title || x.subject || x.goods_name || '',
     url: url,
-    image: x.pic_url || x.pict_url || x.image || x.img || x.thumb || x.goods_img || (x.images && x.images[0]) || '',
+    image: normalizeImageUrl(rawImg),
     price: x.price != null ? x.price : (x.current_price || x.reserve_price || x.min_price || x.retail_price)
   };
 }
 function normalizeItems(data) {
   if (!data || typeof data !== 'object') return [];
-  var list = data.data || data.list || data.items || data.products || data.goods;
+  var list = data.data || data.list || data.items || data.products || data.goods || data.itemList || data.item_list;
   if (Array.isArray(list)) return list.map(mapProduct);
   var result = data.result;
   if (result && typeof result === 'object') {
@@ -790,10 +801,17 @@ function runSearch(query) {
   if (!query) return;
   showLoading();
   var url1688 = TAOBAO_1688.base + TAOBAO_1688.endpoints.searchKeyword + '?keyword=' + encodeURIComponent(query) + '&page=1';
-  fetch(url1688, {
-    method: 'GET',
-    headers: { 'x-rapidapi-host': TAOBAO_1688.host, 'x-rapidapi-key': TAOBAO_1688.key }
-  })
+  var timeoutMs = 14000;
+  var fetchWithTimeout = Promise.race([
+    fetch(url1688, {
+      method: 'GET',
+      headers: { 'x-rapidapi-host': TAOBAO_1688.host, 'x-rapidapi-key': TAOBAO_1688.key }
+    }),
+    new Promise(function (_, reject) {
+      setTimeout(function () { reject(new Error('Timeout. La API tardó demasiado.')); }, timeoutMs);
+    })
+  ]);
+  fetchWithTimeout
     .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
     .then(function (out) {
       var d = out.data;
